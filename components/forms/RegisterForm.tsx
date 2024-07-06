@@ -17,7 +17,7 @@ import {
   IdentificationTypes,
   PatientFormDefaultValues,
 } from "@/constants";
-// import { registerPatient } from "@/lib/actions/patient.actions";
+import { registerPatient } from "@/lib/actions/patient.actions";
 import { PatientFormValidation } from "@/lib/validation";
 
 import "react-datepicker/dist/react-datepicker.css";
@@ -33,7 +33,7 @@ const RegisterForm = ({ user }: { user: User }) => {
   const form = useForm<z.infer<typeof PatientFormValidation>>({
     resolver: zodResolver(PatientFormValidation),
     defaultValues: {
-    //   ...PatientFormDefaultValues,
+      ...PatientFormDefaultValues,
       name: user.name,
       email: user.email,
       phone: user.phone,
@@ -85,11 +85,11 @@ const RegisterForm = ({ user }: { user: User }) => {
         privacyConsent: values.privacyConsent,
       };
 
-    //   const newPatient = await registerPatient(patient);
+      const newPatient = await registerPatient(patient);
 
-    //   if (newPatient) {
-    //     router.push(`/patients/${user.$id}/new-appointment`);
-    //   }
+      if (newPatient) {
+        router.push(`/patients/${user.$id}/new-appointment`);
+      }
     } catch (error) {
       console.log(error);
     }

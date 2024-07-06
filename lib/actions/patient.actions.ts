@@ -1,9 +1,22 @@
 "use server";
 
 import { ID, Query } from "node-appwrite";
+import { Appointment } from "@/types/appwrite.types";
 
-import {users} from "../appwrite.config";
-import { parseStringify } from "../utils";
+
+import {
+  users,
+  APPOINTMENT_COLLECTION_ID,
+  DATABASE_ID,
+  databases,
+  messaging,
+  storage,
+  BUCKET_ID,
+  PATIENT_COLLECTION_ID,
+  ENDPOINT,
+  PROJECT_ID,} from "../appwrite.config";
+import { parseStringify, formatDateTime } from "../utils";
+import {InputFile} from 'node-appwrite/file'
 
 // CREATE APPWRITE USER
 export const createUser = async (user: CreateUserParams) => {
@@ -45,59 +58,63 @@ export const getUser = async (userId: string) => {
   }
 };
 
-// // REGISTER PATIENT
-// export const registerPatient = async ({
-//   identificationDocument,
-//   ...patient
-// }: RegisterUserParams) => {
-//   try {
-//     // Upload file ->  // https://appwrite.io/docs/references/cloud/client-web/storage#createFile
-//     let file;
-//     if (identificationDocument) {
-//       const inputFile =
-//         identificationDocument &&
-//         InputFile.fromBlob(
-//           identificationDocument?.get("blobFile") as Blob,
-//           identificationDocument?.get("fileName") as string
-//         );
+// REGISTER PATIENT
+export const registerPatient = async ({
+  identificationDocument,
+  ...patient
+}: RegisterUserParams) => {
+  try {
+    // Upload file ->  // https://appwrite.io/docs/references/cloud/client-web/storage#createFile
 
-//       file = await storage.createFile(BUCKET_ID!, ID.unique(), inputFile);
-//     }
+    // Adding the file to the storage
+    let file;
+    if (identificationDocument) {
+      const inputFile =
+        identificationDocument &&
+        InputFile.fromBuffer(
+          identificationDocument?.get("blobFile") as Blob,
+          identificationDocument?.get("fileName") as string
+        )
 
-//     // Create new patient document -> https://appwrite.io/docs/references/cloud/server-nodejs/databases#createDocument
-//     const newPatient = await databases.createDocument(
-//       DATABASE_ID!,
-//       PATIENT_COLLECTION_ID!,
-//       ID.unique(),
-//       {
-//         identificationDocumentId: file?.$id ? file.$id : null,
-//         identificationDocumentUrl: file?.$id
-//           ? `${ENDPOINT}/storage/buckets/${BUCKET_ID}/files/${file.$id}/view??project=${PROJECT_ID}`
-//           : null,
-//         ...patient,
-//       }
-//     );
+      file = await storage.createFile(BUCKET_ID!, ID.unique(), inputFile);
+    }
 
-//     return parseStringify(newPatient);
-//   } catch (error) {
-//     console.error("An error occurred while creating a new patient:", error);
-//   }
-// };
+    // Create new patient document -> https://appwrite.io/docs/references/cloud/server-nodejs/databases#createDocument
 
-// // GET PATIENT
-// export const getPatient = async (userId: string) => {
-//   try {
-//     const patients = await databases.listDocuments(
-//       DATABASE_ID!,
-//       PATIENT_COLLECTION_ID!,
-//       [Query.equal("userId", [userId])]
-//     );
+    // Creating new patient document
+    const newPatient = await databases.createDocument(
+      DATABASE_ID!,
+      PATIENT_COLLECTION_ID!,
+      ID.unique(),
+      {
+        identificationDocumentId: file?.$id ? file.$id : null,
+        identificationDocumentUrl: file?.$id
+          ? `${ENDPOINT}/storage/buckets/${BUCKET_ID}/files/${file.$id}/view??project=${PROJECT_ID}`
+          : null,
+        ...patient,
+      }
+    );
 
-//     return parseStringify(patients.documents[0]);
-//   } catch (error) {
-//     console.error(
-//       "An error occurred while retrieving the patient details:",
-//       error
-//     );
-//   }
-// };
+    return parseStringify(newPatient);
+  } catch (error) {
+    console.error("An error occurred while creating a new patient:", error);
+  }
+};
+
+// GET PATIENT
+export const getPatient = async (userId: string) => {
+  try {
+    const patients = await databases.listDocuments(
+      DATABASE_ID!,
+      PATIENT_COLLECTION_ID!,
+      [Query.equal("userId", [userId])]
+    );
+
+    return parseStringify(patients.documents[0]);
+  } catch (error) {
+    console.error(
+      "An error occurred while retrieving the patient details:",
+      error
+    );
+  }
+};
